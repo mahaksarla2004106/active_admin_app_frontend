@@ -15,24 +15,25 @@ class _VenuesScreenState extends State<VenuesScreen> {
     return Column(
       children: [
         PageHeader(title: 'Venues & Activities', subtitle: 'Manage venues and the activity catalogue'),
-        DefaultTabController(
-          length: 2,
-          child: Column(
-            children: [
-              const TabBar(
-                tabs: [Tab(text: 'Venues'), Tab(text: 'Activities')],
-                labelColor: Color(0xFF00B892),
-                unselectedLabelColor: Color(0xFF5A6B7B),
-                indicatorColor: Color(0xFF00B892),
-              ),
-              const SizedBox(height: 4),
-              SizedBox(
-                height: 640,
-                child: TabBarView(
-                  children: [_VenuesTab(), _ActivitiesTab()],
+        Expanded(
+          child: DefaultTabController(
+            length: 2,
+            child: Column(
+              children: [
+                const TabBar(
+                  tabs: [Tab(text: 'Venues'), Tab(text: 'Activities')],
+                  labelColor: Color(0xFF00B892),
+                  unselectedLabelColor: Color(0xFF5A6B7B),
+                  indicatorColor: Color(0xFF00B892),
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Expanded(
+                  child: TabBarView(
+                    children: [_VenuesTab(), _ActivitiesTab()],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -70,7 +71,7 @@ class _VenuesTabState extends State<_VenuesTab> {
       final query = <String, String>{'page': '$_page', 'limit': '12'};
       if (_search.text.trim().isNotEmpty) query['search'] = _search.text.trim();
       if (_status != null) query['status'] = _status!;
-      final result = await ApiClient.request('GET', '/admin/venues', query: query);
+      final result = await AdminApi.getVenues(query);
       final data = result as Map<String, dynamic>;
       if (mounted) {
         setState(() {
@@ -100,10 +101,12 @@ class _VenuesTabState extends State<_VenuesTab> {
     );
     if (confirmed != true) return;
     try {
-      await ApiClient.request('PATCH', '/admin/venues/${venue['id']}/status', body: {'status': status});
+      await AdminApi.updateVenueStatus(venue['id'], status);
+      if (!mounted) return;
       showSnack(context, 'Venue status updated');
       _load();
     } on ApiException catch (e) {
+      if (!mounted) return;
       showSnack(context, e.message, error: true);
     }
   }
@@ -205,7 +208,7 @@ class _VenueDetailScreenState extends State<_VenueDetailScreen> {
 
   Future<void> _load() async {
     try {
-      final venue = await ApiClient.request('GET', '/admin/venues/${widget.venueId}');
+      final venue = await AdminApi.getVenueDetails(widget.venueId);
       if (mounted) setState(() => _venue = venue as Map<String, dynamic>);
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
@@ -310,7 +313,7 @@ class _ActivitiesTabState extends State<_ActivitiesTab> {
       _error = null;
     });
     try {
-      final result = await ApiClient.request('GET', '/admin/catalog/activities');
+      final result = await AdminApi.getActivities();
       if (mounted) {
         setState(() {
           _items = (result as List).cast<Map<String, dynamic>>();
@@ -337,10 +340,12 @@ class _ActivitiesTabState extends State<_ActivitiesTab> {
     );
     if (confirmed != true) return;
     try {
-      await ApiClient.request('POST', '/admin/catalog/activities/${activity['id']}/$action');
+      await AdminApi.updateActivityStatus(activity['id'], action);
+      if (!mounted) return;
       showSnack(context, 'Activity ${action}ed');
       _load();
     } on ApiException catch (e) {
+      if (!mounted) return;
       showSnack(context, e.message, error: true);
     }
   }
@@ -366,10 +371,12 @@ class _ActivitiesTabState extends State<_ActivitiesTab> {
               if (name.text.trim().isEmpty || code.text.trim().isEmpty) return;
               Navigator.pop(ctx);
               try {
-                await ApiClient.request('POST', '/admin/catalog/activities', body: {'name': name.text.trim(), 'sportCode': code.text.trim(), 'type': 'SINGLE'});
+                await AdminApi.createActivity(name.text.trim(), code.text.trim(), 'SINGLE');
+                if (!mounted) return;
                 showSnack(context, 'Activity created');
                 _load();
               } on ApiException catch (e) {
+                if (!mounted) return;
                 showSnack(context, e.message, error: true);
               }
             },

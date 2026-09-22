@@ -34,7 +34,7 @@ class _UsersScreenState extends State<UsersScreen> {
       final query = <String, String>{'page': '$_page', 'limit': '15'};
       if (_search.text.trim().isNotEmpty) query['search'] = _search.text.trim();
       if (_status != null) query['status'] = _status!;
-      final result = await ApiClient.request('GET', '/admin/users', query: query);
+      final result = await AdminApi.getUsers(query);
       final data = result as Map<String, dynamic>;
       if (mounted) {
         setState(() {
@@ -69,10 +69,12 @@ class _UsersScreenState extends State<UsersScreen> {
     );
     if (confirmed != true) return;
     try {
-      await ApiClient.request('PATCH', '/admin/users/${user['id']}/status', body: {'status': target});
+      await AdminApi.updateUserStatus(user['id'], target);
+      if (!mounted) return;
       showSnack(context, 'User ${target == 'SUSPENDED' ? 'suspended' : 'activated'}');
       _load();
     } on ApiException catch (e) {
+      if (!mounted) return;
       showSnack(context, e.message, error: true);
     }
   }
@@ -193,10 +195,32 @@ class _UserDetailScreenState extends State<_UserDetailScreen> {
 
   Future<void> _load() async {
     try {
-      final user = await ApiClient.request('GET', '/admin/users/${widget.userId}');
+      final user = await AdminApi.getUserDetails(widget.userId);
       if (mounted) setState(() => _user = user as Map<String, dynamic>);
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
+    }
+  }
+
+  Future<void> _revokeSessions() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Revoke Sessions'),
+        content: const Text('This will log the user out of all devices immediately. Continue?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Revoke')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    
+    try {
+      await AdminApi.revokeUserSessions(widget.userId);
+      if (mounted) showSnack(context, 'All sessions revoked for this user');
+    } catch (e) {
+      if (mounted) showSnack(context, e.toString(), error: true);
     }
   }
 
@@ -253,6 +277,25 @@ class _UserDetailScreenState extends State<_UserDetailScreen> {
                                 ]),
                               ),
                           ]),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text('Danger Zone', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.red)),
+                const SizedBox(height: 10),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Expanded(child: Text('Revoke all active sessions and force logout on all devices.', style: TextStyle(color: Color(0xFF5A6B7B)))),
+                        OutlinedButton(
+                          onPressed: _revokeSessions,
+                          style: OutlinedButton.styleFrom(foregroundColor: Colors.red, side: const BorderSide(color: Colors.red)),
+                          child: const Text('Revoke Sessions'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ]),

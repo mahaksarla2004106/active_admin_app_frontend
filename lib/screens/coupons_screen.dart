@@ -32,7 +32,7 @@ class _CouponsScreenState extends State<CouponsScreen> {
     try {
       final query = <String, String>{'page': '$_page', 'limit': '15'};
       if (_status != null) query['status'] = _status!;
-      final result = await ApiClient.request('GET', '/admin/coupons', query: query);
+      final result = await AdminApi.getCoupons(query);
       final data = result as Map<String, dynamic>;
       if (mounted) {
         setState(() {
@@ -54,10 +54,12 @@ class _CouponsScreenState extends State<CouponsScreen> {
 
   Future<void> _setStatus(Map<String, dynamic> coupon, String status) async {
     try {
-      await ApiClient.request('PATCH', '/admin/coupons/${coupon['id']}/status', body: {'status': status});
+      await AdminApi.updateCouponStatus(coupon['id'], status);
+      if (!mounted) return;
       showSnack(context, 'Coupon ${status == 'ACTIVE' ? 'activated' : 'deactivated'}');
       _load();
     } on ApiException catch (e) {
+      if (!mounted) return;
       showSnack(context, e.message, error: true);
     }
   }
@@ -101,10 +103,12 @@ class _CouponsScreenState extends State<CouponsScreen> {
               if (maxRedemptions.text.trim().isNotEmpty) body['maxRedemptions'] = int.tryParse(maxRedemptions.text.trim());
               Navigator.pop(ctx);
               try {
-                await ApiClient.request('POST', '/admin/coupons', body: body);
+                await AdminApi.createCoupon(body);
+                if (!mounted) return;
                 showSnack(context, 'Coupon created');
                 _load();
               } on ApiException catch (e) {
+                if (!mounted) return;
                 showSnack(context, e.message, error: true);
               }
             },

@@ -31,7 +31,7 @@ class _SupportScreenState extends State<SupportScreen> {
     try {
       final query = <String, String>{'page': '$_page', 'limit': '15'};
       if (_status != null) query['status'] = _status!;
-      final result = await ApiClient.request('GET', '/admin/support/tickets', query: query);
+      final result = await AdminApi.getSupportTickets(query);
       final data = result as Map<String, dynamic>;
       if (mounted) {
         setState(() {
@@ -116,15 +116,17 @@ class _TicketDetailScreen extends StatefulWidget {
 }
 
 class _TicketDetailScreenState extends State<_TicketDetailScreen> {
-  late Map<String, dynamic> _ticket = widget.ticket;
+  late final Map<String, dynamic> _ticket = widget.ticket;
 
   Future<void> _setStatus(String status) async {
     try {
-      final result = await ApiClient.request('PATCH', '/admin/support/tickets/${_ticket['id']}/status', body: {'status': status});
+      final result = await AdminApi.updateTicketStatus(_ticket['id'], status);
       setState(() => _ticket['status'] = result['status']);
       widget.onChanged();
+      if (!mounted) return;
       showSnack(context, 'Ticket status updated');
     } on ApiException catch (e) {
+      if (!mounted) return;
       showSnack(context, e.message, error: true);
     }
   }

@@ -22,10 +22,10 @@ class _LoginScreenState extends State<LoginScreen> {
       _error = null;
     });
     try {
-      final result = await ApiClient.request('POST', '/admin/auth/login', body: {
-        'email': _emailController.text.trim(),
-        'password': _passwordController.text,
-      });
+      final result = await AdminApi.login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
       if (result is Map<String, dynamic>) {
         await ApiClient.saveSession(result['accessToken'] as String, result['refreshToken'] as String, _emailController.text.trim());
         if (mounted) {

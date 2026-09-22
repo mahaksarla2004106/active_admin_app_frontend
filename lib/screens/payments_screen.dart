@@ -37,7 +37,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     try {
       final query = <String, String>{'page': '$_page', 'limit': '15'};
       if (_status != null) query['status'] = _status!;
-      final result = await ApiClient.request('GET', _tab == 0 ? '/admin/payments' : '/admin/refunds', query: query);
+      final result = await (_tab == 0 ? AdminApi.getPayments(query) : AdminApi.getRefunds(query));
       final data = result as Map<String, dynamic>;
       if (mounted) {
         setState(() {
@@ -64,6 +64,24 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
       _page = 1;
     });
     _load();
+  }
+
+  Future<void> _processRefund(String id) async {
+    try {
+      await AdminApi.processRefund(id);
+      _load();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
+  Future<void> _failRefund(String id) async {
+    try {
+      await AdminApi.failRefund(id);
+      _load();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
 
   @override
@@ -126,6 +144,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                               DataColumn(label: Text('Amount')),
                                               DataColumn(label: Text('Status')),
                                               DataColumn(label: Text('Date')),
+                                              DataColumn(label: Text('Actions')),
                                             ],
                                       rows: [
                                         for (final item in _items)
@@ -145,6 +164,15 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                                   DataCell(Text('₹${(BigInt.parse(item['amountPaise'].toString()) / BigInt.from(100)).toString()}', style: const TextStyle(fontWeight: FontWeight.w600))),
                                                   DataCell(StatusBadge(status: item['status'] as String)),
                                                   DataCell(Text((item['createdAt'] as String).substring(0, 10))),
+                                                  DataCell(Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      if (item['status'] == 'PENDING' || item['status'] == 'EXCEPTION_REVIEW') ...[
+                                                        TextButton(onPressed: () => _processRefund(item['id']), child: const Text('Process')),
+                                                        TextButton(onPressed: () => _failRefund(item['id']), child: const Text('Fail', style: TextStyle(color: Colors.red))),
+                                                      ]
+                                                    ],
+                                                  )),
                                                 ]),
                                       ],
                                     ),

@@ -34,7 +34,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
       final query = <String, String>{'page': '$_page', 'limit': '15'};
       if (_search.text.trim().isNotEmpty) query['search'] = _search.text.trim();
       if (_status != null) query['status'] = _status!;
-      final result = await ApiClient.request('GET', '/admin/bookings', query: query);
+      final result = await AdminApi.getBookings(query);
       final data = result as Map<String, dynamic>;
       if (mounted) {
         setState(() {
@@ -163,7 +163,7 @@ class _BookingDetailScreenState extends State<_BookingDetailScreen> {
 
   Future<void> _load() async {
     try {
-      final booking = await ApiClient.request('GET', '/admin/bookings/${widget.bookingId}');
+      final booking = await AdminApi.getBookingDetails(widget.bookingId);
       if (mounted) setState(() => _booking = booking as Map<String, dynamic>);
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
@@ -184,10 +184,12 @@ class _BookingDetailScreenState extends State<_BookingDetailScreen> {
     );
     if (confirmed != true) return;
     try {
-      await ApiClient.request('POST', '/admin/bookings/${widget.bookingId}/cancel', body: {'reason': 'Admin cancelled'});
+      await AdminApi.cancelBooking(widget.bookingId, 'Admin cancelled');
+      if (!mounted) return;
       showSnack(context, 'Booking cancelled');
       _load();
     } on ApiException catch (e) {
+      if (!mounted) return;
       showSnack(context, e.message, error: true);
     }
   }

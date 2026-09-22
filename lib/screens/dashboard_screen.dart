@@ -24,9 +24,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _load() async {
     setState(() => _error = null);
     try {
-      final overview = await ApiClient.request('GET', '/admin/dashboard/overview');
-      final revenue = await ApiClient.request('GET', '/admin/dashboard/revenue?days=30');
-      final bookings = await ApiClient.request('GET', '/admin/dashboard/bookings?days=30');
+      final overview = await AdminApi.getDashboardOverview();
+      final revenue = await AdminApi.getDashboardRevenue();
+      final bookings = await AdminApi.getDashboardBookings();
       if (mounted) {
         setState(() {
           _overview = overview as Map<String, dynamic>;
@@ -63,34 +63,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              GridView.count(
-                crossAxisCount: 5,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 1.6,
-                mainAxisSpacing: 14,
-                crossAxisSpacing: 14,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  StatCard(label: 'Revenue', value: _rupees(revenue), icon: Icons.payments_outlined, color: const Color(0xFF00B892)),
-                  StatCard(label: 'Users', value: totals['users'].toString(), icon: Icons.people_outline, color: const Color(0xFF2563EB)),
-                  StatCard(label: 'Bookings', value: totals['bookings'].toString(), icon: Icons.event_note_outlined, color: const Color(0xFF7C3AED)),
-                  StatCard(label: 'Venues', value: totals['venues'].toString(), icon: Icons.location_city_outlined, color: const Color(0xFFF59E0B)),
-                  StatCard(label: 'Open Tickets', value: totals['openTickets'].toString(), icon: Icons.support_agent, color: const Color(0xFFD32F2F)),
+                  Expanded(child: StatCard(label: 'Revenue', value: _rupees(revenue), icon: Icons.payments_outlined, color: const Color(0xFF00B892))),
+                  const SizedBox(width: 14),
+                  Expanded(child: StatCard(label: 'Users', value: totals['users'].toString(), icon: Icons.people_outline, color: const Color(0xFF2563EB))),
+                  const SizedBox(width: 14),
+                  Expanded(child: StatCard(label: 'Bookings', value: totals['bookings'].toString(), icon: Icons.event_note_outlined, color: const Color(0xFF7C3AED))),
+                  const SizedBox(width: 14),
+                  Expanded(child: StatCard(label: 'Venues', value: totals['venues'].toString(), icon: Icons.location_city_outlined, color: const Color(0xFFF59E0B))),
+                  const SizedBox(width: 14),
+                  Expanded(child: StatCard(label: 'Open Tickets', value: totals['openTickets'].toString(), icon: Icons.support_agent, color: const Color(0xFFD32F2F))),
                 ],
               ),
               const SizedBox(height: 14),
-              GridView.count(
-                crossAxisCount: 4,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 2.2,
-                mainAxisSpacing: 14,
-                crossAxisSpacing: 14,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  StatCard(label: 'Active Users', value: totals['activeUsers'].toString(), icon: Icons.person_pin, color: const Color(0xFF0EA5E9)),
-                  StatCard(label: 'Activities', value: totals['activities'].toString(), icon: Icons.fitness_center, color: const Color(0xFF14B8A6)),
-                  StatCard(label: 'Refunds', value: _rupees(refunds), icon: Icons.currency_rupee, color: const Color(0xFFF97316)),
-                  StatCard(label: 'Current Admin', value: ApiClient.adminEmail ?? '-', icon: Icons.admin_panel_settings, color: const Color(0xFF6366F1)),
+                  Expanded(child: StatCard(label: 'Active Users', value: totals['activeUsers'].toString(), icon: Icons.person_pin, color: const Color(0xFF0EA5E9))),
+                  const SizedBox(width: 14),
+                  Expanded(child: StatCard(label: 'Activities', value: totals['activities'].toString(), icon: Icons.fitness_center, color: const Color(0xFF14B8A6))),
+                  const SizedBox(width: 14),
+                  Expanded(child: StatCard(label: 'Refunds', value: _rupees(refunds), icon: Icons.currency_rupee, color: const Color(0xFFF97316))),
+                  const SizedBox(width: 14),
+                  Expanded(child: StatCard(label: 'Current Admin', value: ApiClient.adminEmail ?? '-', icon: Icons.admin_panel_settings, color: const Color(0xFF6366F1))),
                 ],
               ),
               const SizedBox(height: 14),
@@ -136,7 +133,7 @@ class _RevenueChart extends StatelessWidget {
                           child: Container(
                             margin: const EdgeInsets.symmetric(horizontal: 1.5),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF00B892).withOpacity(0.75),
+                              color: const Color(0xFF00B892).withValues(alpha: 0.75),
                               borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
                             ),
                             height: maxV == BigInt.zero ? 2.0 : (v * BigInt.from(170) / maxV).toDouble(),

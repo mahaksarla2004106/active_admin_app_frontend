@@ -10,6 +10,8 @@ import '../screens/coupons_screen.dart';
 import '../screens/support_screen.dart';
 import '../screens/content_screen.dart';
 import '../screens/notifications_screen.dart';
+import '../screens/audit_logs_screen.dart';
+import '../screens/feature_flags_screen.dart';
 
 class ShellScaffold extends StatefulWidget {
   final Widget body;
@@ -39,6 +41,8 @@ class _ShellScaffoldState extends State<ShellScaffold> {
     _NavItem('Support', Icons.support_agent_outlined, () => const SupportScreen()),
     _NavItem('Content', Icons.article_outlined, () => const ContentScreen()),
     _NavItem('Notifications', Icons.notifications_outlined, () => const NotificationsScreen()),
+    _NavItem('Audit Logs', Icons.history_outlined, () => const AuditLogsScreen()),
+    _NavItem('Feature Flags', Icons.toggle_on_outlined, () => const FeatureFlagsScreen()),
   ];
 
   Future<void> _logout() async {
@@ -54,10 +58,11 @@ class _ShellScaffoldState extends State<ShellScaffold> {
     return Scaffold(
       body: Row(
         children: [
-          Container(
-            width: 240,
+          Material(
             color: const Color(0xFF0F1E2E),
-            child: Column(
+            child: SizedBox(
+              width: 240,
+              child: Column(
               children: [
                 const Padding(
                   padding: EdgeInsets.fromLTRB(20, 24, 20, 24),
@@ -90,6 +95,7 @@ class _ShellScaffoldState extends State<ShellScaffold> {
                 ),
               ],
             ),
+          ),
           ),
           Expanded(child: current.builder()),
         ],

@@ -29,7 +29,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       _error = null;
     });
     try {
-      final stats = await ApiClient.request('GET', '/admin/notifications/stats');
+      final stats = await AdminApi.getNotificationStats();
       if (mounted) {
         setState(() {
           _stats = stats as Map<String, dynamic>;
@@ -65,12 +65,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (confirmed != true) return;
     setState(() => _sending = true);
     try {
-      final result = await ApiClient.request('POST', '/admin/notifications/broadcast', body: {'title': _title.text.trim(), 'body': _body.text.trim(), 'all': true});
+      final result = await AdminApi.broadcastNotification(_title.text.trim(), _body.text.trim());
+      if (!mounted) return;
       showSnack(context, 'Broadcast created (${result['created'] ?? 0} notifications, ${result['pushed'] ?? 0} pushed)');
       _title.clear();
       _body.clear();
       await _loadStats();
     } on ApiException catch (e) {
+      if (!mounted) return;
       showSnack(context, e.message, error: true);
     } finally {
       if (mounted) setState(() => _sending = false);
